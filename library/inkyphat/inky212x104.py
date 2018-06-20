@@ -32,7 +32,6 @@ GPIO.setwarnings(False)
 _SPI_COMMAND = GPIO.LOW
 _SPI_DATA = GPIO.HIGH
 
-
 _V2_RESET = 0x12
 
 _BOOSTER_SOFT_START = 0x06
@@ -61,9 +60,11 @@ WHITE = 0
 BLACK = 1
 RED = 2
 
+
 class Inky212x104:
 
-    def __init__(self, resolution=(104, 212), cs_pin=CS0_PIN, dc_pin=DC_PIN, reset_pin=RESET_PIN, busy_pin=BUSY_PIN, h_flip=False, v_flip=False):
+    def __init__(self, resolution=(104, 212), cs_pin=CS0_PIN, dc_pin=DC_PIN, reset_pin=RESET_PIN, busy_pin=BUSY_PIN,
+                 h_flip=False, v_flip=False):
         self.inky_version = 2
         self.inky_colour = 'red'
         self.resolution = resolution
@@ -127,7 +128,7 @@ class Inky212x104:
         if version not in (1, 2):
             raise ValueError("Version {} is not valid!".format(version))
 
-	if colour not in ('red', 'black', 'yellow'):
+        if colour not in ('red', 'black', 'yellow'):
             raise ValueError("Colour {} is not valid!".format(colour))
 
         self.inky_version = version
@@ -152,14 +153,14 @@ class Inky212x104:
         pass
 
     def _v2_update_yellow(self, buf_black, buf_yellow):
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xD3, 0x00, 0x00]) # Set RAM Y address + erroneous extra byte?
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xD3, 0x00, 0x00])  # Set RAM Y address + erroneous extra byte?
 
         #                         VGH [4:0] (0x10 15v to 22v)   VGL [3:0] (0x0A -15v to -20v)
-        self._send_command(0x03, [0b10000,                         0b0001])
-        self._send_command(0x04, [7]) # Set voltage of VSH and VSL [7:0] (0x19 +/- 15v)
+        self._send_command(0x03, [0b10000, 0b0001])
+        self._send_command(0x04, [7])  # Set voltage of VSH and VSL [7:0] (0x19 +/- 15v)
 
-        self._send_command(0x2c, 0x3c) # VCOM register, 0x3c = -1.5v?
+        self._send_command(0x2c, 0x3c)  # VCOM register, 0x3c = -1.5v?
 
         # Border control
         self._send_command(0x3c, 0x00)
@@ -171,63 +172,62 @@ class Inky212x104:
             self._send_command(0x3c, 0xFF)
 
         # Voltages which can be applied across the Inky pHAT
-        VSS  = 0b00
-        VSH1 = 0b01 # VGH
-        VSL  = 0b10
-        VSH2 = 0b11 # VGL ?
+        VSS = 0b00
+        VSH1 = 0b01  # VGH
+        VSL = 0b10
+        VSH2 = 0b11  # VGL ?
 
         def l(a, b, c, d):
             return (a << 6) | (b << 4) | (c << 2) | d
 
         ## Send LUTs
         self._send_command(0x32, [
-        # Phase 0     Phase 1     Phase 2     Phase 3     Phase 4     Phase 5     Phase 6
-        # A B C D     A B C D     A B C D     A B C D     A B C D     A B C D     A B C D
-	0b11111010, 0b10010100, 0b10001100, 0b11000000, 0b11010000,  0b00000000, 0b00000000, # LUT0 - Black
-        0b11111010, 0b10010100, 0b00101100, 0b10000000, 0b11100000,  0b00000000, 0b00000000, # LUTT1 - White
-        0b11111010, 0b00000000, 0b00000000, 0b00000000, 0b00000000,  0b00000000, 0b00000000, # IGNORE
-        0b11111010, 0b10010100, 0b11111000, 0b10000000, 0b01010000,  0b00000000, 0b11001100, # LUT3 - Yellow (or Red)
-        0b10111111, 0b01011000, 0b11111100, 0b10000000, 0b11010000,  0b00000000, 0b00010001, # LUT4 - VCOM
+            # Phase 0     Phase 1     Phase 2     Phase 3     Phase 4     Phase 5     Phase 6
+            # A B C D     A B C D     A B C D     A B C D     A B C D     A B C D     A B C D
+            0b11111010, 0b10010100, 0b10001100, 0b11000000, 0b11010000, 0b00000000, 0b00000000,  # LUT0 - Black
+            0b11111010, 0b10010100, 0b00101100, 0b10000000, 0b11100000, 0b00000000, 0b00000000,  # LUTT1 - White
+            0b11111010, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,  # IGNORE
+            0b11111010, 0b10010100, 0b11111000, 0b10000000, 0b01010000, 0b00000000, 0b11001100,
+            # LUT3 - Yellow (or Red)
+            0b10111111, 0b01011000, 0b11111100, 0b10000000, 0b11010000, 0b00000000, 0b00010001,  # LUT4 - VCOM
 
-#       Duration                | Repeat
-#       A     B     C     D     |
-        64,   16,   64,   16,   8, 
-        8,    16,   4,    4,    16,
-        8,    8,    3,    8,    32, 
-        8,    4,    0,    0,    16,
-        16,   8,    8,    0,    32,
-        0,    0,    0,    0,    0, 
-	0,    0,    0,    0,    0, 
+            #       Duration                | Repeat
+            #       A     B     C     D     |
+            64, 16, 64, 16, 8,
+            8, 16, 4, 4, 16,
+            8, 8, 3, 8, 32,
+            8, 4, 0, 0, 16,
+            16, 8, 8, 0, 32,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
         ])
 
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00]) # Set RAM Y address
-        self._send_command(0x4e, 0x00) # Set RAM X address counter
-        self._send_command(0x4f, [0x00, 0x00]) # Set RAM Y address counter
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00])  # Set RAM Y address
+        self._send_command(0x4e, 0x00)  # Set RAM X address counter
+        self._send_command(0x4f, [0x00, 0x00])  # Set RAM Y address counter
 
         self._send_command(0x24, buf_black)
 
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00]) # Set RAM Y address
-        self._send_command(0x4e, 0x00) # Set RAM X address counter
-        self._send_command(0x4f, [0x00, 0x00]) # Set RAM Y address counter
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00])  # Set RAM Y address
+        self._send_command(0x4e, 0x00)  # Set RAM X address counter
+        self._send_command(0x4f, [0x00, 0x00])  # Set RAM Y address counter
 
         self._send_command(0x26, buf_yellow)
 
-
-        self._send_command(0x22, 0xc7) # Display update setting
-        self._send_command(0x20) # Display update activate
+        self._send_command(0x22, 0xc7)  # Display update setting
+        self._send_command(0x20)  # Display update activate
         time.sleep(0.05)
         self._busy_wait()
 
-
     def _v2_update(self, buf_black, buf_red):
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xD3, 0x00, 0x00]) # Set RAM Y address + erroneous extra byte?
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xD3, 0x00, 0x00])  # Set RAM Y address + erroneous extra byte?
 
-        self._send_command(0x04, [0x2d, 0xb2, 0x22]) # Source driving voltage control
+        self._send_command(0x04, [0x2d, 0xb2, 0x22])  # Source driving voltage control
 
-        self._send_command(0x2c, 0x3c) # VCOM register, 0x3c = -1.5v?
+        self._send_command(0x2c, 0x3c)  # VCOM register, 0x3c = -1.5v?
 
         # Border control
         self._send_command(0x3c, 0x00)
@@ -238,66 +238,70 @@ class Inky212x104:
         elif self.border == 0b10000000:
             self._send_command(0x3c, 0xFF)
 
-        VSS  = 0b00
+        VSS = 0b00
         VSH1 = 0b01
-        VSL  = 0b10
+        VSL = 0b10
         VSH2 = 0b11
+
         def l(a, b, c, d):
             return (a << 6) | (b << 4) | (c << 2) | d
 
         ## Send LUTs
         self._send_command(0x32, [
-        # Phase 0     Phase 1     Phase 2     Phase 3     Phase 4     Phase 5     Phase 6
-        # A B C D     A B C D     A B C D     A B C D     A B C D     A B C D     A B C D
-        0b01001000, 0b10100000, 0b00010000, 0b00010000, 0b00010011, 0b00000000, 0b00000000,# 0b00000000, # LUT0 - Black
-        0b01001000, 0b10100000, 0b10000000, 0b00000000, 0b00000011, 0b00000000, 0b00000000,# 0b00000000, # LUTT1 - White
-        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,# 0b00000000, # IGNORE
-        0b01001000, 0b10100101, 0b00000000, 0b10111011, 0b00000000, 0b00000000, 0b00000000,# 0b00000000, # LUT3 - Red
-        0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,# 0b00000000, # LUT4 - VCOM
-        #0xA5, 0x89, 0x10, 0x10, 0x00, 0x00, 0x00, # LUT0 - Black
-        #0xA5, 0x19, 0x80, 0x00, 0x00, 0x00, 0x00, # LUT1 - White
-        #0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, # LUT2 - Red - NADA!
-        #0xA5, 0xA9, 0x9B, 0x9B, 0x00, 0x00, 0x00, # LUT3 - Red
-        #0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, # LUT4 - VCOM
+            # Phase 0     Phase 1     Phase 2     Phase 3     Phase 4     Phase 5     Phase 6
+            # A B C D     A B C D     A B C D     A B C D     A B C D     A B C D     A B C D
+            0b01001000, 0b10100000, 0b00010000, 0b00010000, 0b00010011, 0b00000000, 0b00000000,
+            # 0b00000000, # LUT0 - Black
+            0b01001000, 0b10100000, 0b10000000, 0b00000000, 0b00000011, 0b00000000, 0b00000000,
+            # 0b00000000, # LUTT1 - White
+            0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,  # 0b00000000, # IGNORE
+            0b01001000, 0b10100101, 0b00000000, 0b10111011, 0b00000000, 0b00000000, 0b00000000,
+            # 0b00000000, # LUT3 - Red
+            0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+            # 0b00000000, # LUT4 - VCOM
+            # 0xA5, 0x89, 0x10, 0x10, 0x00, 0x00, 0x00, # LUT0 - Black
+            # 0xA5, 0x19, 0x80, 0x00, 0x00, 0x00, 0x00, # LUT1 - White
+            # 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, # LUT2 - Red - NADA!
+            # 0xA5, 0xA9, 0x9B, 0x9B, 0x00, 0x00, 0x00, # LUT3 - Red
+            # 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, # LUT4 - VCOM
 
-#       Duration              |  Repeat
-#       A     B     C     D   |
-        67,   10,   31,   10,    4,  # 0 Flash
-        16,   8,    4,    4,     6,  # 1 clear
-        4,    8,    8,    32,    16,  # 2 bring in the black
-        4,    8,    8,    64,    32, # 3 time for red
-        6,    6,    6,    2,     2,  # 4 final black sharpen phase
-        0,    0,    0,    0,     0,  # 4
-        0,    0,    0,    0,     0,  # 5
-        0,    0,    0,    0,     0,  # 6
-        0,    0,    0,    0,     0   # 7
+            #       Duration              |  Repeat
+            #       A     B     C     D   |
+            67, 10, 31, 10, 4,  # 0 Flash
+            16, 8, 4, 4, 6,  # 1 clear
+            4, 8, 8, 32, 16,  # 2 bring in the black
+            4, 8, 8, 64, 32,  # 3 time for red
+            6, 6, 6, 2, 2,  # 4 final black sharpen phase
+            0, 0, 0, 0, 0,  # 4
+            0, 0, 0, 0, 0,  # 5
+            0, 0, 0, 0, 0,  # 6
+            0, 0, 0, 0, 0  # 7
         ])
 
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00]) # Set RAM Y address
-        self._send_command(0x4e, 0x00) # Set RAM X address counter
-        self._send_command(0x4f, [0x00, 0x00]) # Set RAM Y address counter
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00])  # Set RAM Y address
+        self._send_command(0x4e, 0x00)  # Set RAM X address counter
+        self._send_command(0x4f, [0x00, 0x00])  # Set RAM Y address counter
 
         self._send_command(0x24, buf_black)
 
-        self._send_command(0x44, [0x00, 0x0c]) # Set RAM X address
-        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00]) # Set RAM Y address
-        self._send_command(0x4e, 0x00) # Set RAM X address counter
-        self._send_command(0x4f, [0x00, 0x00]) # Set RAM Y address counter
+        self._send_command(0x44, [0x00, 0x0c])  # Set RAM X address
+        self._send_command(0x45, [0x00, 0x00, 0xd3, 0x00])  # Set RAM Y address
+        self._send_command(0x4e, 0x00)  # Set RAM X address counter
+        self._send_command(0x4f, [0x00, 0x00])  # Set RAM Y address counter
 
         self._send_command(0x26, buf_red)
 
-
-        self._send_command(0x22, 0xc7) # Display update setting
-        self._send_command(0x20) # Display update activate
+        self._send_command(0x22, 0xc7)  # Display update setting
+        self._send_command(0x20)  # Display update activate
         time.sleep(0.05)
         self._busy_wait()
 
     def _v2_init(self):
         self.reset()
 
-        self._send_command(0x74, 0x54) # Set analog control block
-        self._send_command(0x75, 0x3b) # Sent by dev board but undocumented in datasheet
+        self._send_command(0x74, 0x54)  # Set analog control block
+        self._send_command(0x75, 0x3b)  # Sent by dev board but undocumented in datasheet
 
         # Driver output control
         self._send_command(0x01, [0xd3, 0x00, 0x00])
@@ -333,16 +337,16 @@ class Inky212x104:
     def _v1_init(self):
         self.reset()
 
-        self._busy_wait()    # Wait for driver to be ready to talk
+        self._busy_wait()  # Wait for driver to be ready to talk
 
         self._send_command(_POWER_SETTING, [0x07, 0x00, 0x0A, 0x00])
         self._send_command(_BOOSTER_SOFT_START, [0x07, 0x07, 0x07])
         self._send_command(_POWER_ON)
 
-        self._busy_wait()    # Wait for driver to be ready to talk
+        self._busy_wait()  # Wait for driver to be ready to talk
 
         self._send_command(_PANEL_SETTING, [0b11001111])
-        self._send_command(_VCOM_DATA_INTERVAL_SETTING, [0b00000111 | self.border]) # Set border to white by default
+        self._send_command(_VCOM_DATA_INTERVAL_SETTING, [0b00000111 | self.border])  # Set border to white by default
 
         self._send_command(_OSCILLATOR_CONTROL, [0x29])
         self._send_command(_RESOLUTION_SETTING, [0x68, 0x00, 0xD4])
@@ -367,7 +371,7 @@ class Inky212x104:
     def set_partial_mode(self, vr_st, vr_ed, hr_st, hr_ed):
         if self.inky_version == 1:
             self.partial_mode = True
-            self.update_x1 = (hr_st // 8) * 8 # Snap update region to byte boundary
+            self.update_x1 = (hr_st // 8) * 8  # Snap update region to byte boundary
             self.update_x2 = (hr_ed // 8) * 8
             self.update_y1 = vr_st
             self.update_y2 = vr_ed
@@ -394,14 +398,14 @@ class Inky212x104:
             # hr_st - hr_ed = 0 - 12 - Actually vertical on Inky pHAT in 13 slices of 8 vertical pixels
 
             self.partial_config = [
-                                                         # D7   D6   D5   D4   D3   D2   D1   D0
-                0b00000000 | (hr_st & 0b11111) << 3,     #    HRST[7:3]             0    0    0
-                0b00000111 | (hr_ed & 0b11111) << 3,     #    HRED[7:3]             1    1    1
-                0b00000000 | (vr_st & 0b100000000) >> 8, # -    -    -    -    -    -    -   VRST[8]
-                0b00000000 | (vr_st & 0b11111111),       #                VRST[7:0]
-                0b00000000 | (vr_ed & 0b100000000) >> 8, # -    -    -    -    -    -    -   VRED[8]
-                0b00000000 | (vr_ed & 0b11111111),       #                VRED[7:0]
-                0b00000001,                              # -    -    -    -    -    -    -   PT_SCAN
+                # D7   D6   D5   D4   D3   D2   D1   D0
+                0b00000000 | (hr_st & 0b11111) << 3,  # HRST[7:3]             0    0    0
+                0b00000111 | (hr_ed & 0b11111) << 3,  # HRED[7:3]             1    1    1
+                0b00000000 | (vr_st & 0b100000000) >> 8,  # -    -    -    -    -    -    -   VRST[8]
+                0b00000000 | (vr_st & 0b11111111),  # VRST[7:0]
+                0b00000000 | (vr_ed & 0b100000000) >> 8,  # -    -    -    -    -    -    -   VRED[8]
+                0b00000000 | (vr_ed & 0b11111111),  # VRED[7:0]
+                0b00000001,  # -    -    -    -    -    -    -   PT_SCAN
             ]
 
             # HRST: Horizontal start channel bank: 00h to 13h (0 to 19)
@@ -462,7 +466,7 @@ class Inky212x104:
         if self.inky_version == 2:
             wait_for = GPIO.LOW
 
-        while(GPIO.input(self.busy_pin) != wait_for):
+        while (GPIO.input(self.busy_pin) != wait_for):
             pass
 
     def reset(self):
@@ -495,4 +499,3 @@ class Inky212x104:
             o += " {0:02x}".format(d)
 
         self._spi_write(_SPI_DATA, data)
-
